@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/safeie/bayesian-classifier/storage"
-	"github.com/safeie/bayesian-classifier/util"
+	"github.com/hjin-me/bayesian-classifier/storage"
+	"github.com/hjin-me/bayesian-classifier/util"
 )
 
 // Classifier is a bayesian classifier, provide training score categorize methods and http api.
@@ -30,7 +30,7 @@ type data struct {
 
 // NewClassifier 实例化一个分类器
 // 要求以一个字典的格式传入配置信息和分词器
-func NewClassifier(config map[string]interface{}) *Classifier {
+func NewClassifier(config map[string]interface{}, dictionaryPath string) *Classifier {
 	t := new(Classifier)
 	// 配置信息
 	t.defaultProb = config["defaultProb"].(float64)
@@ -52,7 +52,7 @@ func NewClassifier(config map[string]interface{}) *Classifier {
 	}
 
 	// 初始化分词器
-	t.segmenter = util.NewSegmenter()
+	t.segmenter = util.NewSegmenter(dictionaryPath)
 
 	// 加载数据
 	log.Println("加载数据", storageConfig["path"])

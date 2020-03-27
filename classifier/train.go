@@ -1,7 +1,7 @@
 package classifier
 
 import (
-	"github.com/safeie/bayesian-classifier/util"
+	"github.com/hjin-me/bayesian-classifier/util"
 )
 
 // 从指定的目录读取txt文件进行训练
@@ -16,12 +16,7 @@ func FileTrain(path string, classifier *Classifier) (int, error) {
 		if err != nil {
 			continue
 		}
-		category := getCategory(doc)
-		if len(category) == 0 {
-			continue
-		}
-		content := doc[len(category):]
-		classifier.Training(string(content), string(category))
+		classifier.Training(string(doc), "privacy")
 		i++
 	}
 	return i, nil

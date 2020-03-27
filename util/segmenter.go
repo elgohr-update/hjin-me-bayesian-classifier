@@ -1,19 +1,19 @@
 package util
 
 import (
-	"github.com/huichen/sego"
 	"strings"
+
+	"github.com/huichen/sego"
 )
 
 type Segmenter struct {
 	segmenter sego.Segmenter
 }
 
-func NewSegmenter() *Segmenter {
+func NewSegmenter(dictionaryPath string) *Segmenter {
 	client := new(Segmenter)
 	// 载入词典
-	dir := GetDir()
-	client.segmenter.LoadDictionary(dir + "/../../huichen/sego/data/dictionary.txt")
+	client.segmenter.LoadDictionary(dictionaryPath)
 	return client
 }
 
