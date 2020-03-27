@@ -1,6 +1,9 @@
 package classifier
 
 import (
+	"log"
+	"path/filepath"
+
 	"github.com/hjin-me/bayesian-classifier/util"
 )
 
@@ -14,6 +17,10 @@ func FileTrain(category string, path string, classifier *Classifier) (int, error
 	for _, f := range fs {
 		doc, err := util.ReadFile(path + "/" + f.Name())
 		if err != nil {
+			continue
+		}
+		if filepath.Ext(f.Name()) != ".txt" {
+			log.Printf("skip %s", f.Name())
 			continue
 		}
 		classifier.Training(string(doc), category)

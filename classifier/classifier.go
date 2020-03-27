@@ -14,12 +14,10 @@ import (
 
 // Classifier is a bayesian classifier, provide training score categorize methods and http api.
 type Classifier struct {
-	segmenter     *util.Segmenter      // 分词器
-	defaultProb   float64              // 单词在某一分类中出现的默认概率（不存在时）
-	defaultWeight float64              // 默认概率的权重
-	debug         bool                 // 是否开启调试
-	storage       *storage.FileStorage // 存储引擎
-	data          *data                // 存储数据
+	segmenter *util.Segmenter      // 分词器
+	debug     bool                 // 是否开启调试
+	storage   *storage.FileStorage // 存储引擎
+	data      *data                // 存储数据
 }
 
 type data struct {
@@ -28,13 +26,11 @@ type data struct {
 	Docs      map[string]bool               `json:"docs"`     // 文档数据
 }
 
-// NewClassifier 实例化一个分类器
+// New 实例化一个分类器
 // 要求以一个字典的格式传入配置信息和分词器
-func NewClassifier(config map[string]interface{}, dictionaryPath string) *Classifier {
+func New(config map[string]interface{}, dictionaryPath string) *Classifier {
 	t := new(Classifier)
 	// 配置信息
-	t.defaultProb = config["defaultProb"].(float64)
-	t.defaultWeight = config["defaultWeight"].(float64)
 	t.debug = config["debug"].(bool)
 
 	// 初始化数据结构
@@ -121,7 +117,7 @@ func (t *Classifier) Training(doc, category string) {
 			t.data.Words[word] = make(map[string]float64)
 		}
 		t.data.Words[word][category]++
-		log.Println("单词训练：", word)
+		//log.Println("单词训练：", word)
 	}
 	// 更新分类统计
 	t.data.Categorys[category]++
@@ -138,11 +134,11 @@ func (t *Classifier) Score(word, category string) []*ScoreItem {
 
 	// 指定分类
 	if category != "" {
-		scores.Append(category, t.wordWeightProb(word, category, t.defaultWeight, t.defaultProb))
+		scores.Append(category, t.wordWeightProb(word, category, 1, 0.5))
 	} else {
 		// 计算所有分类
 		for category = range t.data.Words[word] {
-			scores.Append(category, t.wordWeightProb(word, category, t.defaultWeight, t.defaultProb))
+			scores.Append(category, t.wordWeightProb(word, category, 1, 0.5))
 		}
 	}
 	return scores.Top(10)
