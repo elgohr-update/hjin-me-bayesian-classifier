@@ -206,6 +206,12 @@ func (t *Classifier) docProb(doc, category string) float64 {
 		for _, s := range t.data.Words[word] {
 			wordCountsTotal += s
 		}
+		// 频数较小的作为废弃规则
+		if wordCountsTotal < 5 {
+			//prob *= (1 / targetCategoryCounts) / (1 / totalCategoryCounts)
+			continue
+		}
+
 		//log.Printf("%s = %0.6f / %0.6f", word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts)
 		// 拉普拉斯平滑
 		wordCountsInCategory += 1
