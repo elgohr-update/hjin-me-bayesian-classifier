@@ -189,11 +189,35 @@ func (t *Classifier) Categorize(doc string) []*ScoreItem {
 // P(document|category) = P(word1|category) * P(word2|category) ...
 func (t *Classifier) docProb(doc, category string) float64 {
 	prob := 1.0
+	//hasP := 30
 	// 分词，获取逐个单词指定分类的概率
 	words := t.segmenter.Segment(doc)
 	for _, word := range words {
-		wp := t.wordWeightProb(word, category, t.defaultWeight, t.defaultProb)
-		prob *= wp
+		//pba /pb * pa
+		var wordCountsInCategory,
+			wordCountsTotal,
+			totalCategoryCounts,
+			targetCategoryCounts float64
+		// word counts in category
+		totalCategoryCounts = t.categoryNumTotal()
+		targetCategoryCounts = t.data.Categorys[category]
+		if _, ok := t.data.Words[word]; !ok {
+			wordCountsInCategory = 0
+		}
+		if num, ok := t.data.Words[word][category]; ok {
+			wordCountsInCategory = num
+		}
+		for _, s := range t.data.Words[word] {
+			wordCountsTotal += s
+		}
+		//log.Printf("%s = %0.6f / %0.6f", word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts)
+		// 拉普拉斯平滑
+		wordCountsInCategory += 1
+		wordCountsTotal += 1
+		targetCategoryCounts += 2
+		totalCategoryCounts += 2
+		//log.Printf("[%s], %s = %0.6f / %0.6f, laplace, = %0.6f", category, word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts, (wordCountsInCategory/targetCategoryCounts)/(wordCountsTotal/totalCategoryCounts))
+		prob *= (wordCountsInCategory / targetCategoryCounts) / (wordCountsTotal / totalCategoryCounts)
 	}
 	return prob
 }

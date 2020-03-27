@@ -5,7 +5,7 @@ import (
 )
 
 // 从指定的目录读取txt文件进行训练
-func FileTrain(path string, classifier *Classifier) (int, error) {
+func FileTrain(category string, path string, classifier *Classifier) (int, error) {
 	fs, err := util.ReadDir(path)
 	if err != nil {
 		return 0, err
@@ -16,7 +16,7 @@ func FileTrain(path string, classifier *Classifier) (int, error) {
 		if err != nil {
 			continue
 		}
-		classifier.Training(string(doc), "privacy")
+		classifier.Training(string(doc), category)
 		i++
 	}
 	return i, nil
