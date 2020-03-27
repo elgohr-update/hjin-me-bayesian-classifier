@@ -1,5 +1,5 @@
 // 贝叶斯分类器（Naive Bayesian classifier）支持中文文档解析训练和分类，提供HTTP API访问。
-package main
+package bayesianc
 
 import (
 	"flag"
@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	DefaultProb      = 0.5            // 默认概率
-	DefaultWeight    = 1.0            // 默认概率的权重，假定与一个单词相当
 	Debug            = true           // 开启调试
 	HTTP             = false          // 开启HTTP服务
 	HTTPPort         = ":8812"        // HTTP端口
@@ -30,12 +28,10 @@ func main() {
 	flag.StringVar(&cacheDir, "c", "", "临时缓存目录")
 	flag.Parse()
 	// 分类器
-	handler := classifier.NewClassifier(map[string]interface{}{
-		"defaultProb":   DefaultProb,
-		"defaultWeight": DefaultWeight,
-		"debug":         Debug,
-		"http":          HTTP,
-		"httpPort":      HTTPPort,
+	handler := classifier.New(map[string]interface{}{
+		"debug":    Debug,
+		"http":     HTTP,
+		"httpPort": HTTPPort,
 		"storage": map[string]string{
 			"adapter":   Storage,
 			"path":      path.Join(cacheDir, StoragePath),
@@ -52,8 +48,8 @@ func main() {
 	//handler.Training(testcase.BaiduText, "normal")
 
 	// 从txt文件进行训练
-	//classifier.FileTrain("privacy", path.Join(sampleDir, "privcay"), handler)
-	//classifier.FileTrain("normal", path.Join(sampleDir, "normal"), handler)
+	classifier.FileTrain("privacy", path.Join(sampleDir, "privcay"), handler)
+	classifier.FileTrain("normal", path.Join(sampleDir, "normal"), handler)
 
 	// 获取训练数据
 	testWord(handler, "隐私", "")   // 测试已知分类

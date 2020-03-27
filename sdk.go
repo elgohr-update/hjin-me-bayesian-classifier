@@ -9,14 +9,6 @@ import (
 	"github.com/hjin-me/go-utils/logex"
 )
 
-type Score struct {
-	items []*ScoreItem
-}
-
-type ScoreItem struct {
-	Category string  `json:"category"` // 分类名称
-	Score    float64 `json:"score"`    // 概率值
-}
 type data struct {
 	Category map[string]float64            `json:"category"` // 分类数据
 	Words    map[string]map[string]float64 `json:"words"`    // 单词数据
@@ -87,32 +79,47 @@ func (s SDK) factor(word, category string) float64 {
 	targetCategoryCounts += 2
 	wordCountsTotal += 1
 	totalCategoryCounts += 2
+
+	invalidWord := false
+	if wordCountsInCategory == 1 && wordCountsTotal == 1 {
+		invalidWord = true
+	}
 	//log.Printf("[%s], %s = %0.6f / %0.6f, laplace, = %0.6f", category, word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts, (wordCountsInCategory/targetCategoryCounts)/(wordCountsTotal/totalCategoryCounts))
 	if s.debug {
-		logex.Debugf("factor %s[%s] = %0.6f = ( %0.6f / %0.6f ) / ( %0.6f / %0.6f )",
-			word, category, wordCountsInCategory/targetCategoryCounts/(wordCountsTotal/totalCategoryCounts),
-			wordCountsInCategory, targetCategoryCounts, wordCountsTotal, totalCategoryCounts)
+		if invalidWord {
+			logex.Debugf("factor %s[%s] = %0.6f = ( %0.6f / %0.6f ) / ( %0.6f / %0.6f )",
+				"*"+word, category, 1.0,
+				wordCountsInCategory, targetCategoryCounts, wordCountsTotal, totalCategoryCounts)
+		} else {
+			logex.Debugf("factor %s[%s] = %0.6f = ( %0.6f / %0.6f ) / ( %0.6f / %0.6f )",
+				word, category, wordCountsInCategory/targetCategoryCounts/(wordCountsTotal/totalCategoryCounts),
+				wordCountsInCategory, targetCategoryCounts, wordCountsTotal, totalCategoryCounts)
+		}
 	}
+	if invalidWord {
+		return 1.0
+	}
+
 	return wordCountsInCategory / targetCategoryCounts / (wordCountsTotal / totalCategoryCounts)
 }
-func (s SDK) Categorize(b []byte) []ScoreItem {
+func (s SDK) Categorize(b []byte) []*ScoreItem {
 	segments := s.segmenter.Segment(b)
 	words := segmenter.SegmentsToSlice(segments, false)
-	var result []ScoreItem
+	scores := NewScores()
 	for category, categoryCounts := range s.data.Category {
 		prob := 1.0
 		for _, word := range words {
 			prob *= s.factor(word, category)
 		}
-		result = append(result, ScoreItem{
-			Category: category,
-			Score:    prob * categoryCounts / s.calcSampleCounts(),
-		})
+		scores.Append(
+			category,
+			prob*categoryCounts/s.calcSampleCounts(),
+		)
 		if s.debug {
 			logex.Debugf("P(%s) = %0.6f = %0.0f / %0.0f", category, categoryCounts/s.calcSampleCounts(), categoryCounts, s.calcSampleCounts())
 		}
 	}
-	return result
+	return scores.Top(10)
 }
 
 func New() *SDK {
