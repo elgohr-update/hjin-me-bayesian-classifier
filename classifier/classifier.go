@@ -10,6 +10,7 @@ import (
 
 	"github.com/hjin-me/bayesian-classifier/storage"
 	"github.com/hjin-me/bayesian-classifier/util"
+	"github.com/yanyiwu/gojieba"
 )
 
 // Classifier is a bayesian classifier, provide training score categorize methods and http api.
@@ -107,7 +108,10 @@ func (t *Classifier) Training(doc, category string) {
 	// 更新单词数据
 	// 同一个文档中单词出现多次，仅记录一次
 	fwords := make(map[string]bool)
-	words := t.segmenter.Segment(doc)
+	x := gojieba.NewJieba()
+	defer x.Free()
+	words := filterWord(x.Cut(doc, true))
+	//words := t.segmenter.Segment(doc)
 	for _, word := range words {
 		if _, ok := fwords[word]; ok {
 			continue
@@ -207,10 +211,10 @@ func (t *Classifier) docProb(doc, category string) float64 {
 			wordCountsTotal += s
 		}
 		// 频数较小的作为废弃规则
-		if wordCountsTotal < 5 {
-			//prob *= (1 / targetCategoryCounts) / (1 / totalCategoryCounts)
-			continue
-		}
+		//if wordCountsTotal < 5 {
+		//	//prob *= (1 / targetCategoryCounts) / (1 / totalCategoryCounts)
+		//	continue
+		//}
 
 		//log.Printf("%s = %0.6f / %0.6f", word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts)
 		// 拉普拉斯平滑
@@ -219,7 +223,7 @@ func (t *Classifier) docProb(doc, category string) float64 {
 		targetCategoryCounts += 2
 		totalCategoryCounts += 2
 		//log.Printf("[%s], %s = %0.6f / %0.6f, laplace, = %0.6f", category, word, wordCountsInCategory/targetCategoryCounts, wordCountsTotal/totalCategoryCounts, (wordCountsInCategory/targetCategoryCounts)/(wordCountsTotal/totalCategoryCounts))
-		prob *= (wordCountsInCategory / targetCategoryCounts) / (wordCountsTotal / totalCategoryCounts)
+		prob *= wordCountsInCategory / targetCategoryCounts / (wordCountsTotal / totalCategoryCounts)
 	}
 	return prob
 }
@@ -246,4 +250,16 @@ func (t *Classifier) Export() error {
 // Import 导入训练数据
 func (t *Classifier) Import() error {
 	return t.storage.Load(t.data)
+}
+
+// 过滤干扰词 空格，单字词
+func filterWord(ws []string) []string {
+	result := make([]string, 0)
+	for _, w := range ws {
+		if strings.Count(strings.TrimSpace(w), "") <= 2 {
+			continue
+		}
+		result = append(result, w)
+	}
+	return result
 }

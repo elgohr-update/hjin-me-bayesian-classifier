@@ -5,8 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/hjin-me/bayesian-classifier/segmenter"
 	"github.com/hjin-me/go-utils/logex"
+	"github.com/yanyiwu/gojieba"
 )
 
 type data struct {
@@ -17,15 +17,16 @@ type data struct {
 type SDK struct {
 	debug     bool
 	data      data
-	segmenter segmenter.Segmenter
+	segmenter *gojieba.Jieba
 }
 
 func (s *SDK) EnableDebug(b bool) {
 	s.debug = b
 }
 
-func (s *SDK) LoadDictionary(r io.Reader) error {
-	return s.segmenter.LoadDictionary(r)
+func (s *SDK) LoadDictionary() error {
+	s.segmenter = gojieba.NewJieba()
+	return nil
 }
 
 func (s *SDK) LoadModel(r io.Reader) error {
@@ -102,9 +103,8 @@ func (s SDK) factor(word, category string) float64 {
 
 	return wordCountsInCategory / targetCategoryCounts / (wordCountsTotal / totalCategoryCounts)
 }
-func (s SDK) Categorize(b []byte) []*ScoreItem {
-	segments := s.segmenter.Segment(b)
-	words := segmenter.SegmentsToSlice(segments, false)
+func (s SDK) Categorize(doc string) []*ScoreItem {
+	words := s.segmenter.Cut(doc, true)
 	scores := NewScores()
 	for category, categoryCounts := range s.data.Category {
 		prob := 1.0
@@ -124,6 +124,5 @@ func (s SDK) Categorize(b []byte) []*ScoreItem {
 
 func New() *SDK {
 	s := SDK{}
-	s.segmenter = segmenter.Segmenter{}
-	return &SDK{}
+	return &s
 }
