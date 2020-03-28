@@ -1,4 +1,4 @@
-package segmenter
+package sego
 
 // 字串类型，可以用来表达
 //	1. 一个字元，比如"中"又如"国", 英文的一个字元是一个词
@@ -62,11 +62,10 @@ func (token *Token) TextEquals(string string) bool {
 	for i := 0; i < len(token.text); i++ {
 		textArray := []byte(token.text[i])
 		for j := 0; j < len(textArray); j++ {
+			index += 1
 			if textArray[j] != bytStr[index] {
-				index = index + 1
 				return false
 			}
-			index = index + 1
 		}
 	}
 	return true

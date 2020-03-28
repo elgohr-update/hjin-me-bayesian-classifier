@@ -1,4 +1,4 @@
-package segmenter
+package sego
 
 import "github.com/adamzy/cedar-go"
 
@@ -37,7 +37,7 @@ func (dict *Dictionary) addToken(token Token) {
 		return
 	}
 
-	dict.trie.Insert(bytes, dict.NumTokens())
+	_ = dict.trie.Insert(bytes, dict.NumTokens())
 	dict.tokens = append(dict.tokens, token)
 	dict.totalFrequency += int64(token.frequency)
 	if len(token.text) > dict.maxTokenLength {

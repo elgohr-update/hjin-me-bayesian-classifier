@@ -1,5 +1,5 @@
 //Go中文分词
-package segmenter
+package sego
 
 import (
 	"fmt"
@@ -230,14 +230,6 @@ func minInt(a, b int) int {
 		return b
 	}
 	return a
-}
-
-// 取两整数较大值
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // 将文本划分成字元

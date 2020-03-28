@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/hjin-me/bayesian-classifier/adaptor/segmenter/gojieba"
 	"github.com/hjin-me/bayesian-classifier/html2text"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +30,8 @@ func initModel(t *testing.T, cwd string) *SDK {
 	handler := New()
 	b, err := ioutil.ReadFile(path.Join(cwd, "/assets/dictionary.txt"))
 	assert.Nil(t, err)
-	err = handler.LoadDictionary()
+	seg := gojieba.New()
+	err = handler.LoadSegmenter(seg)
 	assert.Nil(t, err)
 	b, err = ioutil.ReadFile(path.Join(cwd, "/_temp/jieba_storage.json"))
 	assert.Nil(t, err)
@@ -44,7 +46,8 @@ func TestSDK_Categorize(t *testing.T) {
 	//b, err := ioutil.ReadFile(path.Join(cwd, "sample/normal/eula_cn.txt"))
 	//assert.Nil(t, err)
 	//t.Log(handler.Categorize(string(b)))
-	s := handler.Categorize("这是一篇Javascript的技巧")
+	s, err := handler.Categorize(bytes.NewBufferString("这是一篇Javascript的技巧"))
+	assert.Nil(t, err)
 	t.Log(PrettyScore(s))
 }
 
@@ -63,7 +66,8 @@ func TestCategorizeNegative(t *testing.T) {
 		t.Run("normal text "+f.Name(), func(t *testing.T) {
 			doc, err := ioutil.ReadFile(path.Join(sampleDir + "/" + f.Name()))
 			assert.Nil(t, err)
-			score := handler.Categorize(string(doc))
+			score, err := handler.Categorize(bytes.NewBuffer(doc))
+			assert.Nil(t, err)
 			//t.Logf("%3.6f", score[0].Score)
 			msg := fmt.Sprintf("%s=%0.10f, %s=%0.10f", score[0].Category, score[0].Score, score[1].Category, score[1].Score)
 			assert.Len(t, score, 2, msg)
@@ -88,7 +92,8 @@ func TestCategorizePositive(t *testing.T) {
 		t.Run("privacy "+f.Name(), func(t *testing.T) {
 			doc, err := ioutil.ReadFile(path.Join(sampleDir + "/" + f.Name()))
 			assert.Nil(t, err)
-			score := handler.Categorize(string(doc))
+			score, err := handler.Categorize(bytes.NewBuffer(doc))
+			assert.Nil(t, err)
 			//t.Logf("%3.6f", score[0].Score)
 			msg := fmt.Sprintf("%s=%0.10f, %s=%0.10f", score[0].Category, score[0].Score, score[1].Category, score[1].Score)
 			assert.Len(t, score, 2, msg)

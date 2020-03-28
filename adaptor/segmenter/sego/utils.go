@@ -1,4 +1,4 @@
-package segmenter
+package sego
 
 import (
 	"bytes"

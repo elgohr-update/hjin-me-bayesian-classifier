@@ -1,4 +1,4 @@
-package segmenter
+package sego
 
 // 文本中的一个分词
 type Segment struct {

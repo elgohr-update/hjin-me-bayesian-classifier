@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hjin-me/bayesian-classifier/segmenter"
 	"github.com/hjin-me/go-utils/logex"
-	"github.com/yanyiwu/gojieba"
 )
 
 var ErrDuplicateDocs = errors.New("已经学习过的样本")
@@ -28,15 +28,16 @@ type SDK struct {
 	mutex     sync.Mutex // 训练字典读写锁
 	data      data
 	debug     bool
-	segmenter *gojieba.Jieba
+	segmenter segmenter.Segmenter
 }
 
 func (s *SDK) EnableDebug(b bool) {
 	s.debug = b
 }
 
-func (s *SDK) LoadDictionary() error {
-	s.segmenter = gojieba.NewJieba()
+func (s *SDK) LoadSegmenter(seg segmenter.Segmenter) error {
+	segmenter.Use(seg)
+	s.segmenter = segmenter.Get()
 	return nil
 }
 
@@ -93,18 +94,14 @@ func (s *SDK) Train(r io.Reader, category string) error {
 		s.mutex.Unlock()
 	}()
 
-	b, err := ioutil.ReadAll(mr)
-	if err != nil {
-		return err
-	}
-	doc := string(b)
-
 	// 更新单词数据
 	// 同一个文档中单词出现多次，仅记录一次
 	fwords := make(map[string]bool)
-	x := gojieba.NewJieba()
-	defer x.Free()
-	words := filterWord(x.Cut(doc, true))
+	words, err := s.segmenter.Cut(mr)
+	if err != nil {
+		return err
+	}
+	words = filterWord(words)
 	//words := t.segmenter.Segment(doc)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -189,8 +186,11 @@ func (s *SDK) factor(word, category string) float64 {
 
 	return wordCountsInCategory / targetCategoryCounts / (wordCountsTotal / totalCategoryCounts)
 }
-func (s *SDK) Categorize(doc string) []*ScoreItem {
-	words := s.segmenter.Cut(doc, true)
+func (s *SDK) Categorize(b io.Reader) ([]*ScoreItem, error) {
+	words, err := s.segmenter.Cut(b)
+	if err != nil {
+		return nil, err
+	}
 	words = filterWord(words)
 	scores := NewScores()
 	for category, categoryCounts := range s.data.Category {
@@ -206,7 +206,7 @@ func (s *SDK) Categorize(doc string) []*ScoreItem {
 			logex.Debugf("P(%s) = %0.6f = %0.0f / %0.0f", category, categoryCounts/s.calcSampleCounts(), categoryCounts, s.calcSampleCounts())
 		}
 	}
-	return scores.Top(10)
+	return scores.Top(10), nil
 }
 
 func New() *SDK {

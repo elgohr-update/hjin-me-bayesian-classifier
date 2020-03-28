@@ -1,6 +1,8 @@
 package classifier
 
 import (
+	"fmt"
+	"math"
 	"sort"
 )
 
@@ -11,6 +13,15 @@ type Score struct {
 type ScoreItem struct {
 	Category string  `json:"category"` // 分类名称
 	Score    float64 `json:"score"`    // 概率值
+}
+
+const jsonInf = "1.7976931348623157e+308"
+
+func (s ScoreItem) MarshalJSON() ([]byte, error) {
+	if math.IsInf(s.Score, 1) {
+		return []byte(fmt.Sprintf(`{"category":"%s","score":"%s"}`, s.Category, jsonInf)), nil
+	}
+	return []byte(fmt.Sprintf(`{"category":"%s","score":"%f"}`, s.Category, s.Score)), nil
 }
 
 func NewScores() *Score {
