@@ -21,7 +21,8 @@ func init() {
 }
 
 func TestNew(t *testing.T) {
-	viper.Set(EnvModelPath, path.Join(cwd, "/_temp/jieba_storage.json"))
+	viper.Set(EnvModelPath, path.Join(cwd, "/data/jieba_storage.json"))
+	viper.Set(EnvDictDir, path.Join(cwd, "/assets/dict/"))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	app := New(ctx)

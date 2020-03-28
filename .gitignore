@@ -1,5 +1,8 @@
 .gitignore
 .idea
 .vscode
+_*/
 vendor/
-data/
+data/*
+sample/*
+!README.md

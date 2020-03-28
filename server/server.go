@@ -14,6 +14,7 @@ import (
 )
 
 const EnvModelPath = "MODEL_PATH"
+const EnvDictDir = "DICT_DIR"
 
 func New(ctx context.Context) *iris.Application {
 	modelPath := viper.GetString(EnvModelPath)
@@ -38,8 +39,9 @@ func New(ctx context.Context) *iris.Application {
 	v1.Post("/train", func(i iris.Context) {
 		// 样本训练接口
 	})
+	dictDir := viper.GetString(EnvDictDir)
 	clsfr := classifier.New()
-	err := clsfr.LoadSegmenter(gojieba.New())
+	err := clsfr.LoadSegmenter(gojieba.New(dictDir))
 	if err != nil {
 		panic(err)
 	}

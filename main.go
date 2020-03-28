@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,13 +13,6 @@ import (
 )
 
 func main() {
-	//var dictionaryPath string
-	//var sampleDir string
-	//var cacheDir string
-	//flag.StringVar(&dictionaryPath, "d", "", "字典路径")
-	//flag.StringVar(&sampleDir, "s", "", "训练样本目录")
-	//flag.StringVar(&cacheDir, "c", "", "临时缓存目录")
-	flag.Parse()
 	viper.AutomaticEnv()
 
 	// 注册一个 cancel，当进程被退出时触发

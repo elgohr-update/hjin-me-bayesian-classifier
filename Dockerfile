@@ -9,6 +9,8 @@ RUN go build -o /go/bin/app /go_build/main.go
 # set Local as zh-hans
 FROM hjin/app:stretch
 ENV LOG_MODE production
+ENV DICT_DIR /var/assets/dict
 EXPOSE 8080
 COPY --from=goBuilder /go/bin/app /usr/local/bin/app
+COPY ./assets /var/assets
 CMD ["app"]
