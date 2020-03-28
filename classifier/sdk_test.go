@@ -1,29 +1,37 @@
-package bayesianc
+package classifier
 
 import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/hjin-me/bayesian-classifier/html2text"
-	"github.com/hjin-me/bayesian-classifier/util"
 	"github.com/stretchr/testify/assert"
 )
 
-var cwd = "当前目录"
+// 项目本地路径
+var cwd string
+
+func init() {
+	_, filePath, _, _ := runtime.Caller(0)
+	log.Println("current path is ", filePath)
+	cwd = path.Join(filePath, "../..")
+}
 
 func initModel(t *testing.T, cwd string) *SDK {
 	// 分类器
 	handler := New()
 	b, err := ioutil.ReadFile(path.Join(cwd, "/assets/dictionary.txt"))
 	assert.Nil(t, err)
-	err = handler.LoadDictionary(bytes.NewBuffer(b))
+	err = handler.LoadDictionary()
 	assert.Nil(t, err)
-	b, err = ioutil.ReadFile(path.Join(cwd, "/_temp/storage.json"))
+	b, err = ioutil.ReadFile(path.Join(cwd, "/_temp/jieba_storage.json"))
 	assert.Nil(t, err)
 	err = handler.LoadModel(bytes.NewBuffer(b))
 	assert.Nil(t, err)
@@ -33,10 +41,11 @@ func TestSDK_Categorize(t *testing.T) {
 	// 分类器
 	handler := initModel(t, cwd)
 	handler.EnableDebug(true)
-	b, err := ioutil.ReadFile(path.Join(cwd, "sample/normal/eula_cn.txt"))
-	assert.Nil(t, err)
-	t.Log(handler.Categorize(b))
-	//t.Log(handler.Categorize([]byte("这是一篇Javascript的技巧")))
+	//b, err := ioutil.ReadFile(path.Join(cwd, "sample/normal/eula_cn.txt"))
+	//assert.Nil(t, err)
+	//t.Log(handler.Categorize(string(b)))
+	s := handler.Categorize("这是一篇Javascript的技巧")
+	t.Log(PrettyScore(s))
 }
 
 func TestCategorizeNegative(t *testing.T) {
@@ -45,7 +54,7 @@ func TestCategorizeNegative(t *testing.T) {
 
 	// 分类测试
 	sampleDir := path.Join(cwd, "/sample/normal")
-	fs, err := util.ReadDir(sampleDir)
+	fs, err := ReadDir(sampleDir)
 	assert.Nil(t, err)
 	for _, f := range fs {
 		if filepath.Ext(f.Name()) != ".txt" {
@@ -54,7 +63,7 @@ func TestCategorizeNegative(t *testing.T) {
 		t.Run("normal text "+f.Name(), func(t *testing.T) {
 			doc, err := ioutil.ReadFile(path.Join(sampleDir + "/" + f.Name()))
 			assert.Nil(t, err)
-			score := handler.Categorize(doc)
+			score := handler.Categorize(string(doc))
 			//t.Logf("%3.6f", score[0].Score)
 			msg := fmt.Sprintf("%s=%0.10f, %s=%0.10f", score[0].Category, score[0].Score, score[1].Category, score[1].Score)
 			assert.Len(t, score, 2, msg)
@@ -70,7 +79,7 @@ func TestCategorizePositive(t *testing.T) {
 	handler := initModel(t, cwd)
 
 	sampleDir := path.Join(cwd, "/sample/privacy")
-	fs, err := util.ReadDir(sampleDir)
+	fs, err := ReadDir(sampleDir)
 	assert.Nil(t, err)
 	for _, f := range fs {
 		if filepath.Ext(f.Name()) != ".txt" {
@@ -79,7 +88,7 @@ func TestCategorizePositive(t *testing.T) {
 		t.Run("privacy "+f.Name(), func(t *testing.T) {
 			doc, err := ioutil.ReadFile(path.Join(sampleDir + "/" + f.Name()))
 			assert.Nil(t, err)
-			score := handler.Categorize(doc)
+			score := handler.Categorize(string(doc))
 			//t.Logf("%3.6f", score[0].Score)
 			msg := fmt.Sprintf("%s=%0.10f, %s=%0.10f", score[0].Category, score[0].Score, score[1].Category, score[1].Score)
 			assert.Len(t, score, 2, msg)
@@ -94,10 +103,10 @@ func TestCategorizePositive(t *testing.T) {
 func TestConvertHTML(t *testing.T) {
 	t.SkipNow()
 	sampleDir := path.Join(cwd, "/sample/normal")
-	fs, err := util.ReadDir(sampleDir)
+	fs, err := ReadDir(sampleDir)
 	assert.Nil(t, err)
 	for _, f := range fs {
-		doc, err := util.ReadFile(path.Join(sampleDir + "/" + f.Name()))
+		doc, err := ioutil.ReadFile(path.Join(sampleDir + "/" + f.Name()))
 		assert.Nil(t, err)
 		textDoc, err := html2text.Convert(doc)
 		assert.Nil(t, err)
